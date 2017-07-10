@@ -9,8 +9,14 @@ using namespace cv;
 int main()
 {
 	Mat image = imread("test.jpg",CV_LOAD_IMAGE_GRAYSCALE);
+	imshow("Ori Image", image);
 	
-	FouriorTransit(image);
+	Mat Newimage(FouriorTransit(image));
+	//imshow("DFT Image", Newimage);
 
+	image = InvertFouriorTransit(Newimage,image.size());
+	imshow("IDFT Image", image);
+
+	waitKey();
 	return 0;
 }

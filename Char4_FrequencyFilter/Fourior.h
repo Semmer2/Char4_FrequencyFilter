@@ -6,4 +6,5 @@
 using namespace std;
 using namespace cv;
 
-void FouriorTransit(Mat image);
+Mat FouriorTransit(Mat image);//输出未处理的原始傅里叶频域图
+Mat InvertFouriorTransit(Mat image,Size size);//输出傅里叶频域图的原始图,因变换时经过填充，固需要知道原始图像大小

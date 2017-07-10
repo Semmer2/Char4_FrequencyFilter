@@ -5,8 +5,9 @@
 using namespace std;
 using namespace cv;
 
-void FouriorTransit(Mat image)
+Mat FouriorTransit(Mat image)
 {
+	//imshow("Original", image);
 	int R = getOptimalDFTSize(image.rows);
 	int C = getOptimalDFTSize(image.cols);
 
@@ -41,7 +42,19 @@ void FouriorTransit(Mat image)
 	tmp.copyTo(q1);
 
 	normalize(magnitudeImage, magnitudeImage, 0, 1, NORM_MINMAX);
-	imshow("MagIm final", magnitudeImage);
+	//imshow("MagIm final", magnitudeImage);
+	return complexI;
+}
 
-	waitKey();
+Mat  InvertFouriorTransit(Mat image,Size size)//Äæ¸µÀïÒ¶±ä»»£¬½«ÆµÓòÍ¼×ªÎª¿ÕÓòÍ¼
+{
+	Mat IDFTImage;
+	dft(image, IDFTImage, DFT_INVERSE | DFT_REAL_OUTPUT);
+	//imshow("magTmp", IDFTImage);
+	normalize(IDFTImage, IDFTImage, 0, 1, CV_MINMAX);
+	//imshow("IDFT", IDFTImage);
+	IDFTImage = IDFTImage(Rect(0, 0, size.width, size.height));
+
+	//waitKey();
+	return IDFTImage;
 }

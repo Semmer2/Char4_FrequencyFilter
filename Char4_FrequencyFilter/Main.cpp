@@ -11,10 +11,13 @@ int main()
 	Mat image = imread("test.jpg",CV_LOAD_IMAGE_GRAYSCALE);
 	imshow("Ori Image", image);
 	
-	Mat Newimage(FouriorTransit(image));
+	Mat FTImage = FouriorTransit(image);
 	//imshow("DFT Image", Newimage);
 
-	image = InvertFouriorTransit(Newimage,image.size());
+	IdeaLowPassFilter(&FTImage, 80);
+
+	image = InvertFouriorTransit(FTImage, image.size());
+
 	imshow("IDFT Image", image);
 
 	waitKey();

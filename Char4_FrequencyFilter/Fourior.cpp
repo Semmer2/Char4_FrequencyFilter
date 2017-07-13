@@ -1,9 +1,11 @@
 #include"iostream"
 #include<opencv2/opencv.hpp>
 #include<opencv2/core/core.hpp>//dtf函数
+#include"MyNSp.h"
 
 using namespace std;
 using namespace cv;
+using namespace MyNSP;
 
 Mat FouriorTransit(Mat image)
 {
@@ -59,7 +61,7 @@ Mat  InvertFouriorTransit(Mat image,Size size)//逆傅里叶变换，将频域图转为空域图
 	return IDFTImage;
 }
 
-void IdeaLowPassFilter(Mat *src, double D0)
+void LowPassFilter(Mat *src, double D0,int OpCode)
 {
 	int state = -1;
 	double tmpD;
@@ -107,20 +109,64 @@ void IdeaLowPassFilter(Mat *src, double D0)
 			}
 			}
 
-			//cout << tmpD << " ";
-			if (tmpD < D0)
+			switch (OpCode)
 			{
-				((double*)(H_mat.data + H_mat.step*i))[j*2] = 1.0;
-			}
-			else
+			case IdeaLPF:
 			{
-				((double*)(H_mat.data + H_mat.step*i))[j*2] = 0.0;
+				if (tmpD < D0)
+				{
+					((double*)(H_mat.data + H_mat.step*i))[j * 2] = 1.0;
+				}
+				else
+				{
+					((double*)(H_mat.data + H_mat.step*i))[j * 2] = 0.0;
+				}
+				((double*)(H_mat.data + H_mat.step*i))[j * 2 + 1] = 0.0;//双通道的原因，其中偶数通道储存实部（第一个通道），奇数通道储存虚部（第二个通道）
+				break;
 			}
-			((double*)(H_mat.data + H_mat.step*i))[j*2 + 1] = 0.0;//双通道的原因，其中偶数通道储存实部（第一个通道），奇数通道储存虚部（第二个通道）
-
+			case TrapeLPF:
+			{
+				int D1 = D0 + 20;
+				if (tmpD < D0)
+				{
+					((double*)(H_mat.data + H_mat.step*i))[j * 2] = 1.0;
+				}
+				else if (tmpD<D1)
+				{
+					tmpD = (tmpD - D1) / (D0 - D1);
+					((double*)(H_mat.data + H_mat.step*i))[j * 2] = tmpD;
+				}
+				else
+				{
+					((double*)(H_mat.data + H_mat.step*i))[j * 2] = 0.0;
+				}
+				((double*)(H_mat.data + H_mat.step*i))[j * 2 + 1] = 0.0;
+				break;
+			}
+			case ButterworthLPF:
+			{
+				tmpD = 1 / (1 + pow(tmpD / D0, 2 * 2));
+				((double*)(H_mat.data + H_mat.step*i))[j * 2] = tmpD;
+				((double*)(H_mat.data + H_mat.step*i))[j * 2 + 1] = 0.0;
+				break;
+			}
+			case ExpLPF:
+			{
+				tmpD = exp(-pow(tmpD / D0, 2));
+				((double*)(H_mat.data + H_mat.step*i))[j * 2] = tmpD;
+				((double*)(H_mat.data + H_mat.step*i))[j * 2 + 1] = 0.0;
+				break;
+			}
+			default:
+				break;
+			}
 		}
 	}
 
+	mulSpectrums(*src, H_mat, *src, DFT_ROWS);//进行两个傅里叶频谱乘法
+}
 
-	mulSpectrums(*src, H_mat, *src, DFT_ROWS);
+void HighPassFilter(Mat *src, double D0, int OpCode)
+{
+
 }

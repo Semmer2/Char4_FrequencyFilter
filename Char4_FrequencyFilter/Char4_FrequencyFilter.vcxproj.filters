@@ -26,5 +26,8 @@
     <ClInclude Include="Fourior.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="MyNSp.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

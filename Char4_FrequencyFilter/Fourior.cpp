@@ -69,6 +69,8 @@ void IdeaLowPassFilter(Mat *src, double D0)
 	long x = width / 2, y = height / 2;
 	Mat H_mat(height, width, CV_64FC2);
 
+	(*src).convertTo(*src, CV_64FC2);
+
 	int i, j;
 	for (i = 0; i < height; i++)
 	{
@@ -105,7 +107,7 @@ void IdeaLowPassFilter(Mat *src, double D0)
 			}
 			}
 
-
+			//cout << tmpD << " ";
 			if (tmpD < D0)
 			{
 				((double*)(H_mat.data + H_mat.step*i))[j*2] = 1.0;
@@ -114,20 +116,11 @@ void IdeaLowPassFilter(Mat *src, double D0)
 			{
 				((double*)(H_mat.data + H_mat.step*i))[j*2] = 0.0;
 			}
-			((double*)(H_mat.data + H_mat.step*i))[j*2 + 1] = 0.0;//为什么要*2？？
-
-			
+			((double*)(H_mat.data + H_mat.step*i))[j*2 + 1] = 0.0;//双通道的原因，其中偶数通道储存实部（第一个通道），奇数通道储存虚部（第二个通道）
 
 		}
 	}
 
-	mulSpectrums(*src, H_mat, *src, CV_DXT_ROWS);
 
-
-/*	Mat planes[] = { Mat((*src).rows,(*src).cols,CV_64FC1),Mat((*src).rows,(*src).cols,CV_64FC1) };
-	split(*src, planes);
-	double min, Max;
-	minMaxLoc(planes[0], &min, &Max, NULL, NULL, NULL);
-	cvConvertScale(&planes[0], &planes[0], 1.0 / (Max - min), 1.0*(-min) / (Max - min));
-	imshow("Test Output", planes[0]);*/
+	mulSpectrums(*src, H_mat, *src, DFT_ROWS);
 }

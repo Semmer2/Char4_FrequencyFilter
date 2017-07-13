@@ -14,11 +14,13 @@ int main()
 	Mat FTImage = FouriorTransit(image);
 	//imshow("DFT Image", Newimage);
 
-	IdeaLowPassFilter(&FTImage, 80);
+	IdeaLowPassFilter(&FTImage, 120);
 
 	image = InvertFouriorTransit(FTImage, image.size());
 
 	imshow("IDFT Image", image);
+
+	FouriorTransit(image);
 
 	waitKey();
 	return 0;

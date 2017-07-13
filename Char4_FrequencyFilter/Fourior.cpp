@@ -71,7 +71,7 @@ void LowPassFilter(Mat *src, double D0,int OpCode)
 	long x = width / 2, y = height / 2;
 	Mat H_mat(height, width, CV_64FC2);
 
-	(*src).convertTo(*src, CV_64FC2);
+	(*src).convertTo(*src, CV_64FC2);//将原始频域图type转换成CV_64FC2
 
 	int i, j;
 	for (i = 0; i < height; i++)
@@ -168,5 +168,174 @@ void LowPassFilter(Mat *src, double D0,int OpCode)
 
 void HighPassFilter(Mat *src, double D0, int OpCode)
 {
+	int state = -1;
+	double tmpD;
+	long width, height;
+	width = src->cols;
+	height = src->rows;
+	long x = width / 2, y = height / 2;
+	Mat H_mat(height, width, CV_64FC2);
 
+	(*src).convertTo(*src, CV_64FC2);
+
+	int i, j;
+	for (i = 0; i < height; i++)
+	{
+		for (j = 0; j < width; j++)
+		{
+			if (i > y&&j > x)
+				state = 3;
+			else if (j > x)
+				state = 2;
+			else if (i > y)
+				state = 1;
+			else state = 0;
+			switch (state)//计算各点到四点的长度（shift之后即到中心的长度）
+			{
+			case 0:
+			{
+				tmpD = (double)sqrt((i*i + j*j));
+				break;
+			}
+			case 1:
+			{
+				tmpD = (double)sqrt((height - i)*(height - i) + j*j);
+				break;
+			}
+			case 2:
+			{
+				tmpD = (double)sqrt(i*i + (j - width)*(j - width));
+				break;
+			}
+			case 3:
+			{
+				tmpD = (double)sqrt((height - i)*(height - i) + (j - width)*(j - width));
+				break;
+			}
+			}
+
+			switch (OpCode)
+			{
+			case IdeaHPF:
+			{
+				if (tmpD > D0)
+				{
+					((double*)(H_mat.data + H_mat.step*i))[j * 2] = 1.0;
+				}
+				else
+				{
+					((double*)(H_mat.data + H_mat.step*i))[j * 2] = 0.0;
+				}
+				((double*)(H_mat.data + H_mat.step*i))[j * 2 + 1] = 0.0;
+				break;
+			}
+			case TrapeHPF://？？存在问题
+			{
+				int D1 = D0 + 50;
+				if (tmpD < D0)
+				{
+					((double*)(H_mat.data + H_mat.step*i))[j * 2] = 0.0;
+				}
+				else if (tmpD>=D0&&tmpD<=D1)
+				{
+					tmpD = (tmpD - D0) / (D1 - D0);
+					((double*)(H_mat.data + H_mat.step*i))[j * 2] = tmpD;
+				}
+				else
+				{
+					((double*)(H_mat.data + H_mat.step*i))[j * 2] = 1.0;
+				}
+				((double*)(H_mat.data + H_mat.step*i))[j * 2 + 1] = 0.0;
+				break;
+			}
+			case ButterworthHPF:
+			{
+				tmpD = 1 / (1 + pow(D0 / tmpD, 2 * 2));
+				((double*)(H_mat.data + H_mat.step*i))[j * 2] = tmpD;
+				((double*)(H_mat.data + H_mat.step*i))[j * 2 + 1] = 0.0;
+				break;
+			}
+			case ExpHPF:
+			{
+				tmpD = exp(-pow(D0 / tmpD, 2));
+				((double*)(H_mat.data + H_mat.step*i))[j * 2] = tmpD;
+				((double*)(H_mat.data + H_mat.step*i))[j * 2 + 1] = 0.0;
+				break;
+			}
+			default:
+				break;
+			}
+		}
+		
+	}
+
+	((double*)(H_mat.data + H_mat.step*0))[0] = 0.0;
+	((double*)(H_mat.data + H_mat.step * 0))[2 * width - 1] = 0.0;
+	((double*)(H_mat.data + H_mat.step*(height-1)))[0] = 0.0;
+	((double*)(H_mat.data + H_mat.step*(height-1)))[2 * width - 1] = 0.0;
+
+	mulSpectrums(*src, H_mat, *src, DFT_ROWS);//进行两个傅里叶频谱乘法
+}
+
+void FilterTest(Mat image, int D0)
+{
+	imshow("Ori Image", image);
+
+	Mat FTImage = FouriorTransit(image);
+
+	Mat ILPFimage = FTImage;
+	LowPassFilter(&ILPFimage, D0, IdeaLPF);
+	ILPFimage = InvertFouriorTransit(ILPFimage, image.size());
+	FouriorTransit(ILPFimage);
+	imshow("IdeaLPF Image", ILPFimage);
+	waitKey();
+
+	Mat TLPFimage = FTImage;
+	LowPassFilter(&TLPFimage, D0, TrapeLPF);
+	TLPFimage = InvertFouriorTransit(TLPFimage, image.size());
+	FouriorTransit(TLPFimage);
+	imshow("TrapeLPF Image", TLPFimage);
+	waitKey();
+
+	Mat BLPFimage = FTImage;
+	LowPassFilter(&BLPFimage, D0, ButterworthLPF);
+	BLPFimage = InvertFouriorTransit(BLPFimage, image.size());
+	FouriorTransit(BLPFimage);
+	imshow("ButterLPF Image", BLPFimage);
+	waitKey();
+
+	Mat ELPFimage = FTImage;
+	LowPassFilter(&ELPFimage, D0, ExpLPF);
+	ELPFimage = InvertFouriorTransit(ELPFimage, image.size());
+	FouriorTransit(ELPFimage);
+	imshow("ExpLPF Image", ELPFimage);
+	waitKey();
+
+	Mat IHPFimage = FTImage;
+	HighPassFilter(&IHPFimage, D0, IdeaHPF);
+	IHPFimage = InvertFouriorTransit(IHPFimage, image.size());
+	FouriorTransit(IHPFimage);
+	imshow("IdeaHPF Image", IHPFimage);
+	waitKey();
+
+	Mat THPFimage = FTImage;
+	HighPassFilter(&THPFimage, D0, TrapeHPF);
+	THPFimage = InvertFouriorTransit(THPFimage, image.size());
+	FouriorTransit(THPFimage);
+	imshow("TrapeHPF Image", THPFimage);
+	waitKey();
+
+	Mat BHPFimage = FTImage;
+	HighPassFilter(&BHPFimage, D0, ButterworthHPF);
+	BHPFimage = InvertFouriorTransit(BHPFimage, image.size());
+	FouriorTransit(BHPFimage);
+	imshow("ButterHPF Image", BHPFimage);
+	waitKey();
+
+	Mat EHPFimage = FTImage;
+	HighPassFilter(&EHPFimage, D0, ExpHPF);
+	EHPFimage = InvertFouriorTransit(EHPFimage, image.size());
+	FouriorTransit(EHPFimage);
+	imshow("ExpHPF Image", EHPFimage);
+	waitKey();
 }

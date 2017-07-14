@@ -15,6 +15,7 @@ Mat FouriorTransit(Mat image)
 
 	Mat dst;
 	copyMakeBorder(image, dst, 0, R - image.rows, 0, C - image.cols, BORDER_CONSTANT, Scalar::all(255));
+	//copyMakeBorder(image, dst, 0, 0, 0, 0, BORDER_CONSTANT, Scalar::all(255));
 	Mat planes[] = { Mat_<float>(dst),Mat::zeros(dst.size(),CV_32F) };
 	Mat complexI;
 	merge(planes, 2, complexI);
@@ -69,6 +70,7 @@ void LowPassFilter(Mat *src, double D0,int OpCode)
 	width = src->cols;
 	height = src->rows;
 	long x = width / 2, y = height / 2;
+	cout << "x: " << x << " y: " << y << " width: " << width << " height: " << height << endl;
 	Mat H_mat(height, width, CV_64FC2);
 
 	(*src).convertTo(*src, CV_64FC2);//将原始频域图type转换成CV_64FC2
@@ -178,11 +180,12 @@ void HighPassFilter(Mat *src, double D0, int OpCode)
 
 	(*src).convertTo(*src, CV_64FC2);
 
-	int i, j;
+	int i, j,count=0;
 	for (i = 0; i < height; i++)
 	{
 		for (j = 0; j < width; j++)
 		{
+			count++;
 			if (i > y&&j > x)
 				state = 3;
 			else if (j > x)
@@ -270,9 +273,9 @@ void HighPassFilter(Mat *src, double D0, int OpCode)
 	}
 
 	((double*)(H_mat.data + H_mat.step*0))[0] = 0.0;
-	((double*)(H_mat.data + H_mat.step * 0))[2 * width - 1] = 0.0;
+	((double*)(H_mat.data + H_mat.step * 0))[2 * width] = 0.0;
 	((double*)(H_mat.data + H_mat.step*(height-1)))[0] = 0.0;
-	((double*)(H_mat.data + H_mat.step*(height-1)))[2 * width - 1] = 0.0;
+	((double*)(H_mat.data + H_mat.step*(height-1)))[2 * width] = 0.0;
 
 	mulSpectrums(*src, H_mat, *src, DFT_ROWS);//进行两个傅里叶频谱乘法
 }
@@ -315,7 +318,10 @@ void FilterTest(Mat image, int D0)
 	HighPassFilter(&IHPFimage, D0, IdeaHPF);
 	IHPFimage = InvertFouriorTransit(IHPFimage, image.size());
 	FouriorTransit(IHPFimage);
+//	IHPFimage = IHPFimage * 255;
+//	IHPFimage.convertTo(IHPFimage, CV_8UC1);
 	imshow("IdeaHPF Image", IHPFimage);
+//	imwrite("savedIHPF.jpg", IHPFimage);
 	waitKey();
 
 	Mat THPFimage = FTImage;
@@ -337,5 +343,5 @@ void FilterTest(Mat image, int D0)
 	EHPFimage = InvertFouriorTransit(EHPFimage, image.size());
 	FouriorTransit(EHPFimage);
 	imshow("ExpHPF Image", EHPFimage);
-	waitKey();
+	waitKey();*/
 }

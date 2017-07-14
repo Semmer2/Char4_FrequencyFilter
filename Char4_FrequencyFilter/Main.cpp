@@ -12,8 +12,9 @@ int main()
 {
 	Mat image = imread("test.jpg", CV_LOAD_IMAGE_GRAYSCALE);
 
-	FilterTest(image,100);
+	FilterTest(image,80);
 
+	//FouriorTransit(imread("savedIHPF.jpg",CV_LOAD_IMAGE_GRAYSCALE));
 	waitKey();
 
 	return 0;
